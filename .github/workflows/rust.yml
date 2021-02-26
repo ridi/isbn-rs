@@ -1,0 +1,63 @@
+name: Rust
+
+on:
+  push:
+    paths:
+    - "**/*.rs"
+    - "**/*.yml"
+    - "**/*.toml"
+  pull_request:
+    paths:
+    - "**/*.rs"
+    - "**/*.yml"
+    - "**/*.toml"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+        rust: [stable, nightly, beta, 1.40.0]
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: ${{ matrix.rust }}
+        override: true
+    - name: Build
+      run: cargo test --verbose --features runtime-ranges
+  fmt:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+    - name: Formatting
+      run: rustup component add rustfmt && cargo fmt -- --check
+  clippy:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+    - name: Run clippy
+      run: rustup component add clippy && cargo clippy --features runtime-ranges

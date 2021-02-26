@@ -1,15 +1,22 @@
 [package]
-name = "isbn"
-version = "0.2.0"
-authors = ["Jihyeok Seo <limeburst@ridi.com>"]
+name = "isbn2"
+version = "0.3.1"
+authors = ["Jihyeok Seo <limeburst@ridi.com>", "Philippe Solodov <solop1906@gmail.com>"]
 description = "A library for handling ISBNs."
 license = "MIT"
-repository = "https://github.com/ridi/isbn-rs"
+repository = "https://github.com/philippeitis/isbn-rs"
 edition = "2018"
 
 [build-dependencies]
 codegen = "0.1"
-roxmltree = "0.4"
+roxmltree = "0.13.0"
 
 [dependencies]
-arrayvec = { version = "0.4", default-features = false }
+arrayvec = { version = "0.5.2", default-features = false }
+quick-xml = { version = "0.20.0", optional = true }
+indexmap = { version = "1.6.1", default-features = false, optional = true }
+serde = { version = "1.0", features = ["derive"], optional = true }
+
+[features]
+runtime-ranges = ["quick-xml", "indexmap"]
+serialize = ["serde"]

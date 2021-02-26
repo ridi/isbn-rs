@@ -1,3 +1,3 @@
 [submodule "isbn-ranges"]
 	path = isbn-ranges
-	url = https://github.com/ridi/isbn-ranges
+	url = https://github.com/philippeitis/isbn-ranges

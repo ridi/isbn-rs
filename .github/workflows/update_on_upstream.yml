@@ -1,0 +1,21 @@
+name: Update to latest version of isbn-range
+on:
+  schedule:
+    - cron: "30 0 * * 0"
+  workflow_dispatch:
+    name: "Run manually"
+
+jobs:
+  curl:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - name: Fetch changes
+      run: cd isbn-ranges && git fetch && git checkout master && cd .. && git add .
+    - name: Send PR
+      uses: peter-evans/create-pull-request@v3
+      with:
+        commit-message: "Update to latest isbn-range commit"
