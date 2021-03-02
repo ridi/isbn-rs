@@ -167,7 +167,9 @@ impl Isbn10 {
         j: u8,
     ) -> IsbnResult<Isbn10> {
         let digits = [a, b, c, d, e, f, g, h, i, j];
-        if Isbn10::calculate_check_digit(&digits) == j {
+        if digits[..9].iter().any(|d| *d > 9) || digits[9] > 10 {
+            Err(IsbnError::DigitTooLarge)
+        } else if Isbn10::calculate_check_digit(&digits) == j {
             Ok(Isbn10 { digits })
         } else {
             Err(IsbnError::InvalidChecksum)
@@ -183,12 +185,13 @@ impl Isbn10 {
     /// assert_eq!(Isbn10::try_from(isbn_13), "1-4920-6766-0".parse());
     /// ```
     pub fn try_from(isbn13: Isbn13) -> IsbnResult<Self> {
-        let d = isbn13.digits;
-        if d[..3] != [9, 7, 8] {
+        if isbn13.digits[..3] != [9, 7, 8] {
             Err(IsbnError::InvalidConversion)
         } else {
-            let c = Isbn10::calculate_check_digit(&isbn13.digits[3..]);
-            Isbn10::new(d[3], d[4], d[5], d[6], d[7], d[8], d[9], d[10], d[11], c)
+            let mut a = [0; 10];
+            a[..9].clone_from_slice(&isbn13.digits[3..12]);
+            a[9] = Isbn10::calculate_check_digit(&a);
+            Ok(Isbn10 { digits: a })
         }
     }
 
@@ -314,7 +317,9 @@ impl Isbn13 {
         m: u8,
     ) -> IsbnResult<Isbn13> {
         let digits = [a, b, c, d, e, f, g, h, i, j, k, l, m];
-        if Isbn13::calculate_check_digit(&digits) == m {
+        if digits.iter().any(|d| *d > 9) {
+            Err(IsbnError::DigitTooLarge)
+        } else if Isbn13::calculate_check_digit(&digits) == m {
             Ok(Isbn13 { digits })
         } else {
             Err(IsbnError::InvalidChecksum)
@@ -411,15 +416,11 @@ impl fmt::Display for Isbn13 {
 
 impl From<Isbn10> for Isbn13 {
     fn from(isbn10: Isbn10) -> Isbn13 {
-        let mut v = ArrayVec::<[u8; 13]>::new();
-        v.extend([9, 7, 8].iter().cloned());
-        v.extend(isbn10.digits[..9].iter().cloned());
-        let c = Isbn13::calculate_check_digit(&v);
-        let d = isbn10.digits;
-        Isbn13::new(
-            9, 7, 8, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8], c,
-        )
-        .unwrap()
+        let mut a = [0; 13];
+        a[..3].clone_from_slice(&[9, 7, 8]);
+        a[3..12].clone_from_slice(&isbn10.digits[0..9]);
+        a[12] = Isbn13::calculate_check_digit(&a);
+        Isbn13 { digits: a }
     }
 }
 
@@ -445,6 +446,8 @@ pub enum IsbnError {
     InvalidChecksum,
     /// Failed to convert to ISBN10.
     InvalidConversion,
+    /// A body digit exceeded 9, or the ISBN10 check digit was larger than 10.
+    DigitTooLarge,
 }
 
 impl fmt::Display for IsbnError {
@@ -461,6 +464,7 @@ impl fmt::Display for IsbnError {
             }
             IsbnError::InvalidChecksum => write!(f, "Failed to validate checksum."),
             IsbnError::InvalidConversion => write!(f, "Failed to convert to ISBN10."),
+            IsbnError::DigitTooLarge => write!(f, "A supplied digit was larger than 9, or the ISBN10 check digit was larger than 10."),
         }
     }
 }
